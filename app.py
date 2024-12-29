@@ -107,5 +107,32 @@ def subscribe(subscribe_request: SubscribeRequest):
 
 
 
+@app.post("/getleads/{api_key}")
+def get_leads(api_key: uuid.UUID):
+    """Fetch leads from the webhook URL"""
+    # conn = get_db_connection()
+    # cursor = conn.cursor()
+    
+    # Check if the user exists
+    # cursor.execute("SELECT webhook_url FROM users WHERE api_key = %s;", (str(api_key),))
+    # webhook_url = cursor.fetchone()
+    
+    # if not webhook_url:
+    #     cursor.close()
+    #     conn.close()
+    #     raise HTTPException(status_code=404, detail="User not found")
+    
+    # Fetch leads from the webhook URL
+    # This is a dummy response for demonstration
+    leads = [
+        {"md5": "aaaaaaaaaa", "name": "John Doe", "email": "johndoe@gmail.com"},
+        {"md5": "zzzzzzzzzz", "name": "Jane Doe", "email": "janedoe@gmail.com"},
+    ]
+
+    # cursor.close()
+    # conn.close()
+
+    return {"leads": leads}
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
