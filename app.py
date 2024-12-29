@@ -98,12 +98,12 @@ def subscribe(subscribe_request: SubscribeRequest):
         raise HTTPException(status_code=404, detail="User not found")
 
     # Update the user with the webhook URL
-    cursor.execute("UPDATE users SET webhook_url = %s WHERE api_key = %s;", (subscribe_request.webhook_url, str(subscribe_request.api_key)))
+    cursor.execute("UPDATE users SET webhook_url = %s WHERE api_key = %s;", (str(subscribe_request.webhook_url), str(subscribe_request.api_key)))
     conn.commit()
     cursor.close()
     conn.close()
     
-    return {"message": "User successfully subscribed to webhook", "webhook_url": subscribe_request.webhook_url}
+    return {"message": "User successfully subscribed to webhook", "webhook_url": str(subscribe_request.webhook_url)}
 
 
 
