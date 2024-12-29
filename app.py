@@ -132,7 +132,7 @@ def get_leads(api_key: uuid.UUID):
     # cursor.close()
     # conn.close()
 
-    return {"leads": leads}
+    return leads
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
