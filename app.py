@@ -107,7 +107,7 @@ def subscribe(subscribe_request: SubscribeRequest):
 
 
 
-@app.post("/getleads/{api_key}")
+@app.get("/getleads/{api_key}")
 def get_leads(api_key: uuid.UUID):
     """Fetch leads from the webhook URL"""
     # conn = get_db_connection()
