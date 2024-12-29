@@ -6,8 +6,7 @@ from pydantic import BaseModel
 import uvicorn
 
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-
+DATABASE_URL = os.environ['DATABASE_URL']
 
 
 app = FastAPI()
