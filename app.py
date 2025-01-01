@@ -105,14 +105,14 @@ def subscribe(subscribe_request: SubscribeRequest):
     
     return {"message": "User successfully subscribed to webhook", "webhook_url": str(subscribe_request.webhook_url)}
 
-@app.delete("/unsubscribe")
-def unsubscribe(hookUrl: HttpUrl):
+@app.delete("/unsubscribe/{api_key}")
+def unsubscribe(api_key: uuid.UUID):
     """Unsubscribe a user from a webhook URL"""
     conn = get_db_connection()
     cursor = conn.cursor()
     
     # Check if the user exists
-    cursor.execute("SELECT api_key FROM users WHERE webhook_url = %s;", (str(hookUrl),))
+    cursor.execute("SELECT email FROM users WHERE api_key = %s;", (str(api_key),))
     user = cursor.fetchone()
     
     if not user:
@@ -120,7 +120,6 @@ def unsubscribe(hookUrl: HttpUrl):
         conn.close()
         raise HTTPException(status_code=404, detail="User not found")
     
-    api_key = user[0]
     # Update the user with the webhook URL
     cursor.execute("UPDATE users SET webhook_url = NULL WHERE api_key = %s;", (str(api_key),))
     conn.commit()
