@@ -139,10 +139,6 @@ def get_sample_data():
     Get sample data  
     Note: Before publishing API, make sure that the FIRST element of the sample data is as comprehensive as possible,
     so zapier can understand the data structure as best as possible. (zapier only reads the first element of the response for testing)
-
-    Not sure if sentences should be seperated as I have done them for now...
-
-    converted to json here manually, but actual data is json serialized as it gets sent to the webhook
     
     """
     return [
@@ -225,10 +221,7 @@ def get_sample_data():
             "phone_3_dnc": "False"
         },
         "insight": "Insight for first md5 123",
-        "sentence_1": "another test sentence for first md5 123",
-        "sentence_2": "fourth test sentence for first md5 123",
-        "sentence_3": "third test sentence for first md5 123",
-        "sentence_4": "test sentence for first md5 123",
+        "sentences": "sentence for first md5 123 | another test sentence for first md5 123 | third test sentence for first md5 123 | forth test sentence for first md5 123",
         "date_delivered": "2025-01-01"
     },
     {
@@ -310,8 +303,7 @@ def get_sample_data():
             "phone_3_dnc": "True"
         },
         "insight": "Insight for second md5 456",
-        "sentence_1": "sentence for second md5 456",
-        "sentence_2": "another sentence for second md5 456",
+        "sentences": "sentence for second md5 456 | another sentence for second md5 456",
         "date_delivered": "2025-01-01"
     },
     {
@@ -393,7 +385,7 @@ def get_sample_data():
             "phone_3_dnc": "True"
         },
         "insight": "Insight for third md5 789",
-        "sentence_1": "sentence for third md5 789",
+        "sentences": "sentence for third md5 789",
         "date_delivered": "2025-01-01"
     }
 ]
