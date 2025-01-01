@@ -4,7 +4,6 @@ import uuid
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, HttpUrl 
 import uvicorn
-import json
 
 DATABASE_URL = os.environ['DATABASE_URL']
 
@@ -136,10 +135,9 @@ def unsubscribe(unsubscribe_request: SubscribeRequest):
 @app.get("/sample")
 def get_sample_data():
     """
-    Get sample data  
-    Note: Before publishing API, make sure that the FIRST element of the sample data is as comprehensive as possible,
-    so zapier can understand the data structure as best as possible. (zapier only reads the first element of the response for testing)
-    
+    Get sample data
+    Note: If PII in real-intent is ever updated, this should be updated as well or integrations won't be able to use any new fields
+    This is because Zapier relies on this sample data to allow users to map fields    
     """
     return [
     {
