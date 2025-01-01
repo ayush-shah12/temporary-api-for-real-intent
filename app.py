@@ -29,8 +29,8 @@ def create_table():
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            email VARCHAR(255) UNIQUE NOT None,
-            api_key UUID UNIQUE NOT None,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            api_key UUID UNIQUE NOT NULL,
             webhook_url VARCHAR(255)
         );
     """)
