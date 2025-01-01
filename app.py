@@ -105,7 +105,7 @@ def subscribe(subscribe_request: SubscribeRequest):
     
     return {"message": "User successfully subscribed to webhook", "webhook_url": str(subscribe_request.webhook_url)}
 
-@app.post("/unsubscribe")
+@app.delete("/unsubscribe/{api_key}")
 def unsubscribe(api_key: uuid.UUID):
     """Unsubscribe a user from a webhook URL"""
     conn = get_db_connection()
