@@ -123,7 +123,7 @@ def unsubscribe(unsubscribe_request: SubscribeRequest):
     
     # Update the user with the webhook URL
     cursor.execute(
-        "UPDATE users SET webhook_url = None WHERE api_key = %s AND webhook_url = %s;", 
+        "UPDATE users SET webhook_url = NULL WHERE api_key = %s AND webhook_url = %s;", 
         (str(unsubscribe_request.api_key), str(unsubscribe_request.webhook_url))
     )
     conn.commit()
