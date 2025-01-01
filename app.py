@@ -229,6 +229,7 @@ def get_sample_data():
         "sentence_2": "fourth test sentence for first md5 123",
         "sentence_3": "third test sentence for first md5 123",
         "sentence_4": "test sentence for first md5 123",
+        "date_delivered": "2025-01-01"
     },
     {
         "md5": "456",
@@ -311,6 +312,7 @@ def get_sample_data():
         "insight": "Insight for second md5 456",
         "sentence_1": "sentence for second md5 456",
         "sentence_2": "another sentence for second md5 456",
+        "date_delivered": "2025-01-01"
     },
     {
         "md5": "789",
@@ -392,6 +394,7 @@ def get_sample_data():
         },
         "insight": "Insight for third md5 789",
         "sentence_1": "sentence for third md5 789",
+        "date_delivered": "2025-01-01"
     }
 ]
 
