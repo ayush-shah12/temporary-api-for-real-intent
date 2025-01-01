@@ -105,11 +105,43 @@ def subscribe(subscribe_request: SubscribeRequest):
     
     return {"message": "User successfully subscribed to webhook", "webhook_url": str(subscribe_request.webhook_url)}
 
+@app.post("/unsubscribe")
+def unsubscribe(api_key: uuid.UUID):
+    """Unsubscribe a user from a webhook URL"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Check if the user exists
+    cursor.execute("SELECT email FROM users WHERE api_key = %s;", (str(api_key),))
+    user = cursor.fetchone()
+    
+    if not user:
+        cursor.close()
+        conn.close()
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Update the user with the webhook URL
+    cursor.execute("UPDATE users SET webhook_url = NULL WHERE api_key = %s;", (str(api_key),))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    return {"message": "User successfully unsubscribed from webhook"}
 
 
 @app.get("/getleads/{api_key}")
 def get_leads(api_key: uuid.UUID):
-    """Fetch leads from the webhook URL"""
+    """
+    Fetch leads from the webhook URL
+    
+    Note:  Before publishing API, make sure that the sample data is as comprehensive as possible,
+    so zapier can understand the data structure as best as possible.
+
+    This endpoint is just a test, and will always be a test, in the sdk, the actual data is sent to the webhook_url,
+    there is no polling, for real-intent.
+    
+
+    """
     # conn = get_db_connection()
     # cursor = conn.cursor()
     
