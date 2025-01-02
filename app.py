@@ -14,32 +14,43 @@ class User(BaseModel):
     api_key: uuid.UUID | None = None
     webhook_url: str | None = None
 
+
 class SubscribeRequest(BaseModel):
     webhook_url: HttpUrl
     api_key: uuid.UUID
+
 
 def get_db_connection():
     conn = psycopg2.connect(DATABASE_URL)
     return conn
 
 
-def create_table():
+def create_tables():
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    # Create users table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             email VARCHAR(255) UNIQUE NOT NULL,
-            api_key UUID UNIQUE NOT NULL,
-            webhook_url VARCHAR(255)
+            api_key UUID UNIQUE NOT NULL
         );
     """)
+
+    # Create webhook_urls table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS webhook_urls (
+            id SERIAL PRIMARY KEY,
+            api_key UUID NOT NULL REFERENCES users(api_key) ON DELETE CASCADE,
+            webhook_url VARCHAR(255) NOT NULL
+        );
+    """)
+
     conn.commit()
     cursor.close()
     conn.close()
 
-create_table()
-
-
+create_tables()
 
 @app.get("/")
 def home():
@@ -70,15 +81,20 @@ def get_user(api_key: uuid.UUID):
     """Fetch user details by api_key"""
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT email, webhook_url FROM users WHERE api_key = %s;", (str(api_key),))
+    cursor.execute("SELECT email FROM users WHERE api_key = %s;", (str(api_key),))
     user = cursor.fetchone()
+
+    if not user:
+        cursor.close()
+        conn.close()
+        raise HTTPException(status_code=404, detail="User not found")
+
+    cursor.execute("SELECT webhook_url FROM webhook_urls WHERE api_key = %s;", (str(api_key),))
+    webhooks = cursor.fetchall()
     cursor.close()
     conn.close()
 
-    if user:
-        return {"email": user[0], "webhook_url": user[1]}
-    else:
-        raise HTTPException(status_code=404, detail="User not found")
+    return {"email": user[0], "webhook_urls": [webhook[0] for webhook in webhooks]}
 
 
 @app.post("/subscribe")
@@ -96,13 +112,18 @@ def subscribe(subscribe_request: SubscribeRequest):
         conn.close()
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Update the user with the webhook URL
-    cursor.execute("UPDATE users SET webhook_url = %s WHERE api_key = %s;", (str(subscribe_request.webhook_url), str(subscribe_request.api_key)))
-    conn.commit()
+    try:
+        cursor.execute("INSERT INTO webhook_urls (api_key, webhook_url) VALUES (%s, %s);",
+                       (str(subscribe_request.api_key), str(subscribe_request.webhook_url)))
+        conn.commit()
+    except Exception as e:
+        cursor.close()
+        conn.close()
+        raise HTTPException(status_code=400, detail=str(e))
+
     cursor.close()
     conn.close()
-    
-    return {"message": "User successfully subscribed to webhook", "webhook_url": str(subscribe_request.webhook_url)}
+    return {"message": "Webhook URL successfully subscribed", "webhook_url": str(subscribe_request.webhook_url)}
 
 
 @app.delete("/unsubscribe")
@@ -110,26 +131,24 @@ def unsubscribe(unsubscribe_request: SubscribeRequest):
     """Unsubscribe a user from a webhook URL"""
     conn = get_db_connection()
     cursor = conn.cursor()
-    
+
     # Check if the user exists
     cursor.execute("SELECT email FROM users WHERE api_key = %s;", (str(unsubscribe_request.api_key),))
     user = cursor.fetchone()
-    
+
     if not user:
         cursor.close()
         conn.close()
         raise HTTPException(status_code=404, detail="User not found")
-    
-    # Update the user with the webhook URL
-    cursor.execute(
-        "UPDATE users SET webhook_url = NULL WHERE api_key = %s AND webhook_url = %s;", 
-        (str(unsubscribe_request.api_key), str(unsubscribe_request.webhook_url))
-    )
+
+    # Delete the webhook URL
+    cursor.execute("DELETE FROM webhook_urls WHERE api_key = %s AND webhook_url = %s;",
+                   (str(unsubscribe_request.api_key), str(unsubscribe_request.webhook_url)))
     conn.commit()
     cursor.close()
     conn.close()
-    
-    return {"message": "User successfully unsubscribed from webhook"}
+
+    return {"message": "Webhook URL successfully unsubscribed"}
 
 
 @app.get("/sample")
