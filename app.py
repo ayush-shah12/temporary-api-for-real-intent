@@ -1,7 +1,7 @@
 import os
 import psycopg2
 import uuid
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header, Depends
 from pydantic import BaseModel, HttpUrl 
 import uvicorn
 
@@ -17,7 +17,6 @@ class User(BaseModel):
 
 class SubscribeRequest(BaseModel):
     webhook_url: HttpUrl
-    api_key: uuid.UUID
 
 
 def get_db_connection():
@@ -57,6 +56,16 @@ def home():
     return {"message": "hi"}
 
 
+def get_api_key_from_header(authorization: str = Header(None)):
+    """Extract the API key from the Authorization header (Bearer token)."""
+    if authorization is None:
+        raise HTTPException(status_code=400, detail="Authorization header missing")
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=400, detail="Invalid Authorization header")
+    api_key = authorization[len("Bearer "):]
+    return uuid.UUID(api_key)
+
+
 @app.post("/register")
 def register(user: User):
     """Register a new user with email and generate an api_key"""
@@ -73,12 +82,12 @@ def register(user: User):
         conn.close()
         return {"email": user.email, "api_key": api_key}
     except Exception as e:
-        return HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.get("/me")
-def get_user(api_key: uuid.UUID):
-    """Fetch user details by api_key"""
+def get_user(api_key: uuid.UUID = Depends(get_api_key_from_header)):
+    """Fetch user details by api_key from the Authorization header"""
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT email FROM users WHERE api_key = %s;", (str(api_key),))
@@ -98,15 +107,15 @@ def get_user(api_key: uuid.UUID):
 
 
 @app.post("/subscribe")
-def subscribe(subscribe_request: SubscribeRequest):
-    """Subscribe a user to a webhook URL"""
+def subscribe(subscribe_request: SubscribeRequest, api_key: uuid.UUID = Depends(get_api_key_from_header)):
+    """Subscribe a user to a webhook URL, API key is in the header"""
     conn = get_db_connection()
     cursor = conn.cursor()
-    
-    # Check if the user exists
-    cursor.execute("SELECT email FROM users WHERE api_key = %s;", (str(subscribe_request.api_key),))
+
+    # Check if the user exists with the API key
+    cursor.execute("SELECT email FROM users WHERE api_key = %s;", (str(api_key),))
     user = cursor.fetchone()
-    
+
     if not user:
         cursor.close()
         conn.close()
@@ -114,7 +123,7 @@ def subscribe(subscribe_request: SubscribeRequest):
 
     try:
         cursor.execute("INSERT INTO webhook_urls (api_key, webhook_url) VALUES (%s, %s);",
-                       (str(subscribe_request.api_key), str(subscribe_request.webhook_url)))
+                       (str(api_key), str(subscribe_request.webhook_url)))
         conn.commit()
     except Exception as e:
         cursor.close()
@@ -127,13 +136,13 @@ def subscribe(subscribe_request: SubscribeRequest):
 
 
 @app.delete("/unsubscribe")
-def unsubscribe(unsubscribe_request: SubscribeRequest):
+def unsubscribe(unsubscribe_request: SubscribeRequest, api_key: uuid.UUID = Depends(get_api_key_from_header)):
     """Unsubscribe a user from a webhook URL"""
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Check if the user exists
-    cursor.execute("SELECT email FROM users WHERE api_key = %s;", (str(unsubscribe_request.api_key),))
+    # Check if the user exists with the API key
+    cursor.execute("SELECT email FROM users WHERE api_key = %s;", (str(api_key),))
     user = cursor.fetchone()
 
     if not user:
@@ -143,12 +152,12 @@ def unsubscribe(unsubscribe_request: SubscribeRequest):
 
     # Delete the webhook URL
     cursor.execute("DELETE FROM webhook_urls WHERE api_key = %s AND webhook_url = %s;",
-                   (str(unsubscribe_request.api_key), str(unsubscribe_request.webhook_url)))
+                   (str(api_key), str(unsubscribe_request.webhook_url)))
     conn.commit()
     cursor.close()
     conn.close()
 
-    return {"message": "Webhook URL successfully unsubscribed"}
+    return {"message": f"Webhook URL({str(unsubscribe_request.webhook_url)}) successfully unsubscribed"}
 
 
 @app.get("/sample")
@@ -406,6 +415,7 @@ def get_sample_data():
         "date_delivered": "2025-01-01"
     }
 ]
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
